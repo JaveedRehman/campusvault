@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "Resource": {
+      "title": "Resource",
+      "description": "Academic document metadata stored in CampusVault",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document unique identifier" },
+        "title": { "type": "string", "maxLength": 200, "description": "Document title" },
+        "description": { "type": "string", "maxLength": 1000, "description": "Optional description of the academic document" },
+        "college": { "type": "string", "maxLength": 100, "description": "College name" },
+        "department": { "type": "string", "maxLength": 100, "description": "Department name" },
+        "semester": { "type": "string", "maxLength": 50, "description": "Academic semester" },
+        "subject": { "type": "string", "maxLength": 100, "description": "Course subject title" },
+        "fileKey": { "type": "string", "maxLength": 255, "description": "Cloudflare R2 or local storage object key" },
+        "fileUrl": { "type": "string", "maxLength": 1000, "description": "Public download or proxy URL" },
+        "fileName": { "type": "string", "maxLength": 255, "description": "Original file name" },
+        "fileSize": { "type": "number", "description": "File size in bytes" },
+        "uploadedBy": { "type": "string", "maxLength": 128, "description": "UID of uploader" },
+        "uploadedByEmail": { "type": "string", "maxLength": 255, "description": "Email of uploader" },
+        "uploadedByName": { "type": "string", "maxLength": 100, "description": "Display name of uploader" },
+        "uploadedAt": { "type": "string", "description": "ISO timestamp of upload" },
+        "averageRating": { "type": "number", "description": "Calculated average rating 1-5" },
+        "ratingCount": { "type": "number", "description": "Total number of ratings submitted" }
+      },
+      "required": ["title", "college", "department", "semester", "subject", "fileKey", "uploadedBy"]
+    },
+    "Rating": {
+      "title": "Rating",
+      "description": "Anonymous or user-submitted star rating for a resource",
+      "type": "object",
+      "properties": {
+        "resourceId": { "type": "string", "maxLength": 128, "description": "Target resource ID" },
+        "anonymousIdentifier": { "type": "string", "maxLength": 128, "description": "Client browser identifier hash" },
+        "rating": { "type": "number", "description": "Rating score between 1 and 5" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of rating" }
+      },
+      "required": ["resourceId", "anonymousIdentifier", "rating"]
+    }
+  },
+  "firestore": {
+    "/resources/{resourceId}": {
+      "schema": "Resource",
+      "description": "Collection of academic documents metadata"
+    },
+    "/ratings/{ratingId}": {
+      "schema": "Rating",
+      "description": "Collection of resource ratings"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidResource(data) {
+      return data.keys().hasAll(['title', 'college', 'department', 'semester', 'subject', 'fileKey', 'uploadedBy']) &&
+             data.keys().hasOnly(['id', 'title', 'description', 'college', 'department', 'semester', 'subject', 'fileKey', 'fileUrl', 'fileName', 'fileSize', 'uploadedBy', 'uploadedByEmail', 'uploadedByName', 'uploadedAt', 'averageRating', 'ratingCount']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             data.college is string && data.college.size() <= 100 &&
+             data.department is string && data.department.size() <= 100 &&
+             data.semester is string && data.semester.size() <= 50 &&
+             data.subject is string && data.subject.size() <= 100 &&
+             data.fileKey is string && data.fileKey.size() <= 255 &&
+             (!('fileUrl' in data) || (data.fileUrl is string && data.fileUrl.size() <= 1000)) &&
+             data.uploadedBy is string && data.uploadedBy == request.auth.uid;
+    }
+
+    function isValidRating(data) {
+      return data.keys().hasAll(['resourceId', 'anonymousIdentifier', 'rating']) &&
+             data.keys().hasOnly(['resourceId', 'anonymousIdentifier', 'rating', 'createdAt']) &&
+             data.resourceId is string && data.resourceId.size() <= 128 &&
+             data.anonymousIdentifier is string && data.anonymousIdentifier.size() <= 128 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5;
+    }
+
+    // Resources collection: Anyone can read, logged-in users can create/edit own uploads or aggregate ratings
+    match /resources/{resourceId} {
+      allow read: if true;
+
+      allow create: if isSignedIn() &&
+                      isValidResource(request.resource.data);
+
+      allow update: if (isSignedIn() && resource.data.uploadedBy == request.auth.uid && isValidResource(request.resource.data)) ||
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'ratingCount']));
+
+      allow delete: if isSignedIn() && resource.data.uploadedBy == request.auth.uid;
+    }
+
+    // Ratings collection: Anyone can read and submit a rating
+    match /ratings/{ratingId} {
+      allow read: if true;
+
+      allow create: if isValidRating(request.resource.data);
+
+      allow update, delete: if false;
+    }
+  }
+}

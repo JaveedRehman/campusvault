@@ -1,0 +1,6 @@
+{
+  "name": "CampusVault — Academic PDF Repository",
+  "description": "Simple early-2000s university style academic PDF-sharing repository for course notes, papers, and study materials.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
